@@ -2,10 +2,57 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\MairieRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
+
 #[ORM\Entity(repositoryClass: MairieRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(
+            normalizationContext: ["groups"=>["mairie:read:collection"]]
+        ),
+        new Get(
+           normalizationContext: ["groups" => ["mairie:read"]]
+        ),
+        new Post(
+            normalizationContext: ["groups" => ["mairie:read"]],
+            denormalizationContext: ["groups" => ["test:write"]]
+        ),
+        new Patch(
+            normalizationContext: ["groups" => ["mairie:read"]],
+            denormalizationContext: ["groups" => ["test:write"]]
+        ),
+        new Delete(
+        //security: "is_granted('ROLE_USER') and object.getOwner() == user"
+        )
+    ]
+)]
+
+#[ApiFilter(SearchFilter::class, properties: [
+    "codePostal" => "exact",
+    "label" => "partial",
+    "ville"=> "partial",
+    "departement.region"=> "partial",
+    "departement.label"=>"partial"
+    ])
+]
+
+#[ApiFilter(OrderFilter::class, properties: [
+    "ville",
+    "codePostal"
+])]
+
 class Mairie
 {
     #[ORM\Id]
@@ -14,40 +61,52 @@ class Mairie
     private ?int $id = null;
 
     #[ORM\Column(length: 6)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?string $codeInsee = null;
 
     #[ORM\Column(length: 5)]
+    #[Groups(["mairie:read:collection", "mairie:read", "test:write", "departement:delete"])]
     private ?string $codePostal = null;
 
     #[ORM\Column(length: 180)]
+    #[Groups(["mairie:read:collection", "mairie:read", "test:write", "departement:delete"])]
     private ?string $label = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["mairie:read:collection", "mairie:read", "test:write", "departement:delete"])]
     private ?string $adresse = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups(["mairie:read:collection", "mairie:read", "test:write", "departement:delete"])]
     private ?string $ville = null;
 
     #[ORM\Column(length: 255,nullable: true)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?string $siteWeb = null;
 
     #[ORM\Column(length: 25,nullable: true)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?string $telephone = null;
 
     #[ORM\Column(length: 255,nullable: true)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?string $email = null;
 
     #[ORM\Column(length: 20,nullable: true)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?string $latitude = null;
 
     #[ORM\Column(length: 20,nullable: true)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?string $longitude = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?\DateTimeInterface $dateMaj = null;
 
     #[ORM\ManyToOne(inversedBy: 'mairies')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["test:write", "departement:delete"])]
     private ?Departement $departement = null;
 
     public function getId(): ?int
